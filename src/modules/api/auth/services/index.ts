@@ -234,11 +234,20 @@ export class AuthService {
         const user = await this.prisma.user.findUnique({
             where: {
                 email: options.email,
-                verificationCode: options.otp,
             },
         });
 
-        if (!user || !user.codeTTL || user.codeTTL < new Date()) {
+        if (!user) {
+            throw new InvalidVerificationCodeException(
+                'Invalid or expired verification code',
+                HttpStatus.BAD_REQUEST,
+            );
+        }
+
+        const otpKey = `resetOtp:${user.identifier}`;
+        const storedOtp = await this.redisService.get(otpKey);
+
+        if (!storedOtp || storedOtp.trim() !== options.otp.trim()) {
             throw new InvalidVerificationCodeException(
                 'Invalid or expired verification code',
                 HttpStatus.BAD_REQUEST,
@@ -252,6 +261,9 @@ export class AuthService {
                 codeTTL: null,
             },
         });
+
+        // Set reset permission in Redis for 10 minutes
+        await this.redisService.set(`resetAllowed:${user.identifier}`, user.id.toString(), 'EX', 10 * 60);
 
         return buildResponse({
             message: 'Code verified successfully.',

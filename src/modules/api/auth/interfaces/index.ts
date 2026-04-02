@@ -1,6 +1,6 @@
 
 import { Request } from 'express';
-import { User } from 'generated/prisma/browser';
+import { User } from '@prisma/client';
 
 
 export interface LoginMeta {

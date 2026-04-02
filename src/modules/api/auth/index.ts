@@ -3,10 +3,11 @@ import { Module } from "@nestjs/common";
 import { JwtModule } from "@nestjs/jwt";
 import { AuthService } from "./services";
 import { AuthController } from "./controllers";
+import { EmailModule } from "../email";
 
 @Module({
   imports: [
-    // EmailModule,
+    EmailModule,
     JwtModule.register({
       global: true,
       secret: jwtSecret,
