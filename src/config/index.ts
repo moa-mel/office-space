@@ -48,8 +48,8 @@ const runtimeEnvironment: RequiredEnvironment[] = [
 
 validate(runtimeEnvironment);
 
-export const allowedDomains =
-  process.env.ALLOWED_DOMAINS && process.env.ALLOWED_DOMAINS.split(',');
+export const allowedDomains: string[] | undefined =
+  process.env.ALLOWED_DOMAINS ? process.env.ALLOWED_DOMAINS.split(',') : undefined;
 export const isProduction: boolean = process.env.NODE_ENV === 'production';
 export const port: number = parseInt(process.env.PORT ?? '5000');
 
