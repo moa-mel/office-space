@@ -13,20 +13,34 @@ datasource db {
 }
 
 model User {
-  id              Int       @id @default(autoincrement())
-  identifier      String    @unique
-  firstName       String
-  lastName        String
-  email           String    @unique
-  password        String
-  isVerified      Boolean   @default(false)
-  emailVerifiedAt DateTime?
-  googleId        String?   @unique
-  picture         String?
+  id               Int       @id @default(autoincrement())
+  identifier       String    @unique
+  firstName        String
+  lastName         String
+  email            String    @unique
+  password         String
+  isVerified       Boolean   @default(false)
+  emailVerifiedAt  DateTime?
+  googleId         String?   @unique
+  picture          String?
+  verificationCode String?
+  codeTTL          DateTime?
+  office           Office[]
 
-
-  createdAt     DateTime        @default(now())
-  updatedAt     DateTime        @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([email])
+}
+
+model Office {
+  id          Int    @id @default(autoincrement())
+  identifier  String
+  title       String
+  description String
+
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

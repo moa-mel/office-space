@@ -19,3 +19,7 @@ export class PrismaNetworkException extends HttpException {
 export class AuthTokenValidationException extends HttpException {
   name = 'AuthTokenValidationException';
 }
+
+export class InvalidVerificationCodeException extends HttpException {
+  name = 'InvalidVerificationCodeException';
+}
