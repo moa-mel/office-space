@@ -55,6 +55,8 @@ export class AuthService {
     }
 
     async signUp(options: SignUpDto) {
+        const hashedPassword = await bcrypt.hash(options.password, 10);
+
         const user = await this.prisma.$transaction(async (prisma) => {
             // Check if email already exists
             const existingUser = await prisma.user.findUnique({
@@ -72,7 +74,7 @@ export class AuthService {
                     firstName: options.firstName,
                     lastName: options.lastName,
                     email: options.email,
-                    password: await bcrypt.hash(options.password, 10),
+                    password: hashedPassword,
                     isVerified: false,
                     emailVerifiedAt: null, // make sure this is nullable in Prisma
                 },

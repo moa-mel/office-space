@@ -45,4 +45,20 @@ export class EmailService {
 
         await this.sendMail(email, 'Password Reset OTP', html);
     }
+
+    async sendAddUserEmail(name: string, email:string, office_name:string){
+        const html = `<h1>User Added to Office</h1>
+                  <h3>Hello ${name}</h3>
+                  <p>Happy to inform you that you have being added to <strong>${office_name}</strong></p>`;
+
+        await this.sendMail(email, 'Add User email', html);
+    }
+
+     async sendRemoveUserEmail(name: string, email:string, office_name:string){
+        const html = `<h1>User Removed from the Office</h1>
+                  <h3>Hello ${name}</h3>
+                  <p>Sorry to inform you that you have been removed from <strong>${office_name}</strong></p>`;
+
+        await this.sendMail(email, 'Remove User Email', html);
+    }
 }
