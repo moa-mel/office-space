@@ -1,4 +1,5 @@
 import { CanActivate, ExecutionContext, ForbiddenException, HttpStatus, Injectable } from "@nestjs/common";
+import { Request } from 'express';
 import Redis from "ioredis";
 import { AuthTokenValidationException, InvalidAuthTokenException, PrismaNetworkException, UserNotFoundException } from "../errors";
 import { DataStoredInToken } from "../interfaces";
@@ -14,9 +15,13 @@ export class AuthGuard implements CanActivate {
     private jwtService: JwtService,
     private prisma: PrismaService,
     @InjectRedis() private readonly redisService: Redis,
-  ) {}
+  ) { }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
+    if (context.getType() !== 'http') {
+      return false; 
+    }
+
     const request = context.switchToHttp().getRequest();
     const token = this.extractTokenFromHeader(request);
     if (!token) {
@@ -81,10 +86,18 @@ export class AuthGuard implements CanActivate {
     return true;
   }
 
-  private extractTokenFromHeader(request: Request): string | undefined {
-  const authHeader = request.headers.get('authorization');
-  const [type, token] = authHeader?.split(' ') ?? [];
-  return type === 'Bearer' ? token : undefined;
-}
+  private extractTokenFromHeader(request: any): string | undefined {
+    let authHeader: string | undefined;
+
+    if (request.headers && typeof request.headers === 'object') {
+      authHeader =
+        typeof request.headers.get === 'function'
+          ? request.headers.get('authorization')
+          : request.headers['authorization'];
+    }
+
+    const [type, token] = authHeader?.split(' ') ?? [];
+    return type === 'Bearer' ? token : undefined;
+  }
 
 }
