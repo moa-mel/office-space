@@ -23,9 +23,18 @@ export class PrismaService extends PrismaClient implements OnModuleInit {
   }
 
   async onModuleInit() {
-    logger.log('Connecting to the database...');
-    await this.$connect();
-    logger.info('Connected to the database');
+    try {
+      logger.log('Connecting to the database...');
+      await this.$connect();
+      logger.info('Connected to the database');
+      
+      // Test the connection with a simple query
+      await this.$queryRaw`SELECT 1`;
+      logger.info('Database connection test successful');
+    } catch (error) {
+      logger.error('Failed to connect to the database:', error);
+      throw error;
+    }
   }
 
   async enableShutdownHooks(app: INestApplication) {
