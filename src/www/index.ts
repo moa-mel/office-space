@@ -9,6 +9,7 @@ import { HttpAdapterHost, NestFactory } from "@nestjs/core";
 import { NestExpressApplication } from "@nestjs/platform-express";
 import helmet from "helmet";
 import morgan from "morgan";
+import { IoAdapter } from "@nestjs/platform-socket.io";
 
 
 export interface CreateServerOptions {
@@ -52,6 +53,8 @@ export default async (
   app.useGlobalPipes(classValidatorPipeInstance());
   const httpAdapterHost = app.get(HttpAdapterHost);
   app.useGlobalFilters(new AllExceptionsFilter(httpAdapterHost));
+
+  app.useWebSocketAdapter(new IoAdapter(app));
 
   app.listen(options.port);
 

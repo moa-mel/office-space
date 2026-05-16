@@ -62,13 +62,22 @@ export class AuthGuard implements CanActivate {
 
       request.user = user;
     } catch (error) {
-      logger.error(error);
+      logger.error('AuthGuard error:', error);
       switch (true) {
         case error instanceof UserNotFoundException: {
           throw error;
         }
 
-        case error.name == 'PrismaClientKnownRequestError': {
+        case error.name === 'PrismaClientKnownRequestError':
+        case error.name === 'PrismaClientInitializationError':
+        case error.name === 'PrismaClientRustPanicError':
+        case error.name === 'PrismaClientUnknownRequestError': {
+          logger.error('Prisma error details:', {
+            name: error.name,
+            code: error.code,
+            meta: error.meta,
+            message: error.message,
+          });
           throw new PrismaNetworkException(
             'Unable to process request. Please try again',
             HttpStatus.SERVICE_UNAVAILABLE,
