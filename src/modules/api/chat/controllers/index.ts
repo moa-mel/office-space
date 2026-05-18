@@ -65,4 +65,14 @@ export class ChatController {
     return this.chatService.addChannelMember(conversationId, user, dto);
   }
 
+  @Get('media-preview')
+  async getMediaPreview(@Query() dto: FetchMessagesDto, @GetUser() user: User) {
+    return this.chatService.getMediaPreview(user, dto);
+  }
+
+  @Get('download-media/:messageId')
+  async downloadMessageMedia(@Param('messageId') messageId: number, @GetUser() user: User) {
+    return this.chatService.downloadMessageMedia(user, messageId);
+  }
+
 }

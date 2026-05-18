@@ -13,7 +13,7 @@ import {
 import { InvalidConversationIdException } from "../errors";
 import { ConversationType, MessageType, Prisma, User } from "@prisma/client";
 import { JoinChatError } from "../errors";
-import { HttpStatus, BadRequestException, Injectable } from "@nestjs/common";
+import { HttpStatus, BadRequestException, Injectable, ForbiddenException, NotFoundException } from "@nestjs/common";
 import { buildResponse } from "@/utils/api-response-util";
 import { WsException } from "@nestjs/websockets";
 import { generateId } from "@/utils";
@@ -400,8 +400,101 @@ export class ChatService {
         });
     }
 
-    async getMediaPreview() {
+    async getMediaPreview(user: User, options: FetchMessagesDto) {
+        const isMember = await this.prisma.participant.findUnique({
+            where: {
+                conversationId_userId: {
+                    conversationId: options.conversationId,
+                    userId: user.id,
+                },
+            },
+        });
 
+        if (!isMember) {
+            throw new ForbiddenException(
+                'User is not a participant of this conversation',
+            );
+        }
+
+        const whereClause: Prisma.MessageWhereInput = {
+            conversationId: options.conversationId,
+            mediaUrl: {
+                not: null,
+            },
+            NOT: {
+                deletedFor: {
+                    has: user.id,
+                },
+            },
+        };
+
+        if (options.lastMessageId) {
+            const lastMessage = await this.prisma.message.findUnique({
+                where: { id: options.lastMessageId },
+            });
+
+            if (lastMessage) {
+                whereClause.createdAt = {
+                    lt: lastMessage.createdAt,
+                };
+            }
+        }
+
+        const mediaMessages = await this.prisma.message.findMany({
+            where: whereClause,
+            orderBy: {
+                createdAt: 'desc',
+            },
+            take: 20,
+            select: {
+                id: true,
+                mediaUrl: true,
+                mediaType: true,
+                createdAt: true,
+                senderId: true,
+            },
+        });
+
+        return buildResponse({
+            message: 'Media preview fetched successfully.',
+            data: {
+                media: mediaMessages,
+                oldestMessageId: mediaMessages[mediaMessages.length - 1]?.id || null,
+            },
+        });
+    }
+
+    async downloadMessageMedia(user: User, messageId: number) {
+        const message = await this.prisma.message.findUnique({
+            where: { id: messageId },
+            include: {
+                conversation: {
+                    select: {
+                        participants: {
+                            where: { userId: user.id },
+                            select: { userId: true }
+                        }
+                    }
+                }
+            }
+        });
+
+        if (!message) {
+            throw new NotFoundException('Message not found');
+        }
+
+        if (message.conversation.participants.length === 0) {
+            throw new ForbiddenException('You are not authorized to download this media.');
+        }
+
+        if (!message.mediaUrl || !message.mediaType) {
+            throw new BadRequestException('Message does not contain downloadable media.');
+        }
+
+        return {
+            url: message.mediaUrl,
+            mimeType: message.mediaType,
+        };
     }
 
 
