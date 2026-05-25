@@ -4,6 +4,7 @@ import { EmailModule } from "./email";
 import { OfficeModule } from "./office";
 import { ChatModule } from "./chat";
 import { UserModule } from "./user";
+import { BookingModule } from "./booking";
 
 
 @Module({
@@ -12,7 +13,8 @@ import { UserModule } from "./user";
     EmailModule,
     UserModule,
     OfficeModule,
-    ChatModule
+    ChatModule,
+    BookingModule,
   ],
 })
 export class ApiModule {}
