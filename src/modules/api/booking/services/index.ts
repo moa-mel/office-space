@@ -1,14 +1,14 @@
 import { BadRequestException, ForbiddenException, Injectable } from "@nestjs/common";
-import { EmailService } from "../../email/services";
 import { PrismaService } from "@/modules/core/prisma/services";
 import { CreateBookingDto } from "../dtos";
 import { buildResponse } from "@/utils/api-response-util";
+import { MailService } from "@/mail/mail.service";
 
 @Injectable()
 export class BookingService {
     constructor(
         private prisma: PrismaService,
-        private emailService: EmailService,
+        private mailService: MailService,
     ) { }
 
     async createBooking(userId: number, dto: CreateBookingDto) {
@@ -43,10 +43,24 @@ export class BookingService {
                 notes: dto.notes,
                 timezone: dto.timezone,
                 meetingUrl: dto.meetingUrl,
+            },
+            include: {
+                host: true
             }
         });
 
-        // TODO: Trigger EmailService here to send a calendar invite/notification to the host
+        this.mailService
+            .createBooking(
+                booking.host.firstName,
+                booking.host.email,
+                booking.title ?? 'New Booking',
+                booking.startDate.toISOString(),
+                booking.endDate.toISOString(),
+                booking.timezone ?? 'UTC',
+                booking.meetingUrl ?? 'N/A',
+                booking.notes ?? ''
+            )
+            .catch((err) => console.error('Failed to send create booking email:', err));
 
         return buildResponse({
             message: "booking successfully created",

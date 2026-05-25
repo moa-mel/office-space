@@ -5,13 +5,14 @@ import { generateId } from "@/utils";
 import { buildResponse } from "@/utils/api-response-util";
 import { OfficeNotFoundException, UserNotFoundException } from "../errors";
 import { BadRequestException, ForbiddenException, HttpStatus, Injectable, NotFoundException } from "@nestjs/common";
-import { EmailService } from "../../email/services";
+import { MailService } from "@/mail/mail.service";
+
 
 @Injectable()
 export class OfficeService {
     constructor(
         private prisma: PrismaService,
-        private emailService: EmailService,
+        private mailService: MailService,
     ) { }
     async createOffice(user: User, options: CreateOfficeDto) {
         const officeSpace = await this.prisma.office.create({
@@ -114,7 +115,7 @@ export class OfficeService {
             return { officeName: office.name, addedUser, member };
         });
 
-        this.emailService
+        this.mailService
             .sendAddUserEmail(result.addedUser.firstName, result.addedUser.email, result.officeName)
             .catch((err) => console.error('Failed to send add-user email:', err));
 
@@ -231,7 +232,7 @@ export class OfficeService {
         });
 
         // Send email asynchronously (non-blocking)
-        this.emailService
+        this.mailService
             .sendRemoveUserEmail(
                 result.targetUser.firstName,
                 result.targetUser.email,

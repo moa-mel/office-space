@@ -2,11 +2,11 @@ import { Module } from "@nestjs/common";
 import { OfficeService } from "./services";
 import { OfficeController } from "./controllers";
 import { PrismaModule } from "@/modules/core/prisma";
-import { EmailModule } from "../email";
+import { MailModule } from "@/mail/mail.module";
 
 
 @Module({
-  imports: [EmailModule],
+  imports: [MailModule],
   providers: [OfficeService],
   controllers: [OfficeController],
   exports: [],
