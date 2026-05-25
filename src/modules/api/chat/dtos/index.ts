@@ -81,6 +81,7 @@ export class FetchConversationDto {
 }
 
 export class DeleteMessageDto {
+  @Type(() => Number)
   @IsNumber()
   messageId: number;
 

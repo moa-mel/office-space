@@ -259,7 +259,7 @@ export class ChatService {
             });
 
             if (!userOffice) {
-                throw new BadRequestException('User must be a member of the specified office to create a group');
+                throw new BadRequestException('User must be a member of the specified office to create a channel');
             }
 
             const conversation = await tx.conversation.create({

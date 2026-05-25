@@ -29,6 +29,13 @@ enum MessageType {
   FILE
 }
 
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  REJECTED
+}
+
 model User {
   id               Int            @id @default(autoincrement())
   identifier       String         @unique
@@ -47,6 +54,8 @@ model User {
   participants     Participant[]
   messageReads     MessageRead[]
   officeMembers    OfficeMember[]
+  bookings         Booking[]      @relation("BookingsCreated")
+  receivedBookings Booking[]      @relation("BookingsReceived")
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @updatedAt
 
@@ -63,6 +72,7 @@ model Office {
   user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   members       OfficeMember[]
   conversations Conversation[]
+  bookings      Booking[]
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
 }
@@ -153,4 +163,23 @@ model MessageRead {
   @@unique([messageId, userId])
   @@index([messageId])
   @@index([userId])
+}
+
+model Booking{
+  id        Int       @id @default(autoincrement())
+  userId    Int
+  user      User      @relation("BookingsCreated", fields: [userId], references: [id], onDelete: Cascade)
+  hostId    Int
+  host      User      @relation("BookingsReceived", fields: [hostId], references: [id], onDelete: Cascade)
+  officeId  Int
+  office    Office    @relation(fields: [officeId], references: [id], onDelete: Cascade)
+  startDate DateTime
+  endDate   DateTime
+  status    BookingStatus @default(PENDING)
+  title     String?
+  notes     String?       @db.Text
+  timezone  String?       // E.g. "America/New_York"
+  meetingUrl String?      // E.g. Zoom or Google Meet link
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 }
