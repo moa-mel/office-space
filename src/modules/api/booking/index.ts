@@ -1,10 +1,10 @@
 import { Module } from "@nestjs/common";
 import { BookingService } from "./services";
 import { BookingController } from "./controllers";
-import { MailService } from "@/mail/mail.service";
+import { MailModule } from "@/mail/mail.module";
 
 @Module({
-    imports: [MailService],
+    imports: [MailModule],
       providers: [BookingService],
       controllers: [BookingController],
       exports: [],
