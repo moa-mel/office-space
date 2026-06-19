@@ -137,4 +137,32 @@ export class MailService {
             throw error;
         }
     }
+
+    async updateBooking(
+        name: string,
+        email: string,
+        title: string,
+        startDate: string,
+        endDate: string,
+        notes: string
+    ) {
+        try {
+            const filePath = path.join(__dirname, 'templates', 'create-booking.html');
+
+            let html = fs.readFileSync(filePath, 'utf8');
+
+            html = html
+                .replace(/{{name}}/g, name)
+                .replace(/{{title}}/g, title)
+                .replace(/{{startDate}}/g, startDate)
+                .replace(/{{endDate}}/g, endDate)
+                .replace(/{{notes}}/g, notes || 'N/A')
+                .replace(/{{year}}/g, String(new Date().getFullYear()));
+
+            await this.sendMail(email, 'New Booking Scheduled', html);
+        } catch (error) {
+            this.logger.error(`Failed to send email to ${email}`, error);
+            throw error;
+        }
+    }
 }

@@ -3,7 +3,6 @@ import { InjectRedis } from "@nestjs-modules/ioredis";
 import { ConfigService } from "@nestjs/config";
 import { JwtService } from "@nestjs/jwt";
 import Redis from "ioredis";
-import { EmailService } from "../../email/services";
 import { buildResponse } from "@/utils/api-response-util";
 import { refreshJwtSecret, refreshTokenExpiresIn } from "@/config";
 import { generateId } from "@/utils";
@@ -12,11 +11,12 @@ import { ForgetPasswordDto, ResetPasswordDto, SignInDto, SignUpDto, VerifyCodeDt
 import { DataStoredInToken, LoginMeta } from "../interfaces";
 import { ForbiddenException, HttpStatus } from "@nestjs/common";
 import { InvalidVerificationCodeException, UserNotFoundException } from "../errors";
+import { MailService } from "@/mail/mail.service";
 
 export class AuthService {
     constructor(
         private prisma: PrismaService,
-        private emailService: EmailService,
+        private emailService: MailService,
         private configService: ConfigService,
         private readonly jwtService: JwtService,
         @InjectRedis() private readonly redisService: Redis

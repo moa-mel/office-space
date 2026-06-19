@@ -29,3 +29,26 @@ export class CreateBookingDto {
     @IsString()
     meetingUrl?: string;
 }
+
+export class UpdateBookingDto {
+    @IsDate()
+    startDate: Date;
+
+    @IsDate()
+    endDate: Date;
+
+    @IsString()
+    title?: string;
+
+    @IsString()
+    notes?: string;
+}
+
+export class GetHostAvailabilityDto {
+    @Type(() => Number)
+    @IsNumber()
+    hostId: number
+
+    @IsDate()
+    date: Date
+}
