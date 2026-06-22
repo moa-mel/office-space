@@ -14,7 +14,7 @@ const logger = new Logger('RedisIntegration');
         // const host = configService.get<string>('REDIS_HOST');
         // const port = Number(configService.get<number>('REDIS_PORT'));
         // const password = configService.get<string>('REDIS_PASSWORD');
-        const url = configService.get<string>('redis_url');
+        const url = configService.get<string>('REDIS_URL');
         // logger.debug(`Connecting to Redis at ${host}:${port}`);
         return {
           type: 'single',
@@ -22,7 +22,6 @@ const logger = new Logger('RedisIntegration');
           // port,
           // password,
           url,
-          tls: {},
         };
       },
       inject: [ConfigService],
