@@ -1,19 +1,19 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
 import { PrismaService } from "@/modules/core/prisma/services";
-import { CreateBookingDto, GetHostAvailabilityDto, UpdateBookingDto } from "../dtos";
 import { buildResponse } from "@/utils/api-response-util";
 import { MailService } from "@/mail/mail.service";
 import { generateId } from "@/utils";
 import { User } from "@prisma/client";
+import { CreateEventDto, GetHostAvailabilityDto, UpdateEventDto } from "../dtos";
 
 @Injectable()
-export class BookingService {
+export class EventService {
     constructor(
         private prisma: PrismaService,
         private mailService: MailService,
     ) { }
 
-    async createBooking(user: User, officeId: number, dto: CreateBookingDto) {
+    async createEvent(user: User, officeId: number, dto: CreateEventDto) {
         if (user.id === dto.hostId) {
             throw new BadRequestException('You cannot book a call with yourself');
         }
@@ -23,7 +23,7 @@ export class BookingService {
 
         const now = new Date();
         if (requestedStartDate < now) {
-            throw new BadRequestException('Cannot schedule a booking in the past');
+            throw new BadRequestException('Cannot schedule a Event in the past');
         }
 
         if (requestedStartDate >= requestedEndDate) {
@@ -45,7 +45,7 @@ export class BookingService {
             throw new ForbiddenException('Both users must be members of the specified office to book a call');
         }
 
-        const conflictingBooking = await this.prisma.booking.findFirst({
+        const conflictingEvent = await this.prisma.event.findFirst({
             where: {
                 hostId: dto.hostId,
                 startDate: { lt: requestedEndDate },
@@ -53,14 +53,14 @@ export class BookingService {
             }
         });
 
-        if (conflictingBooking) {
+        if (conflictingEvent) {
             throw new BadRequestException('The user is already booked for this time slot');
         }
 
         const meetingUrl = dto.meetingUrl || `https://meet.jit.si/office-space-${generateId({ type: 'identifier' })}`;
 
-        // Create the booking record
-        const booking = await this.prisma.booking.create({
+        // Create the Event record
+        const Event = await this.prisma.event.create({
             data: {
                 userId: user.id,
                 hostId: dto.hostId,
@@ -78,24 +78,24 @@ export class BookingService {
             }
         });
 
-        [booking.host, booking.user].forEach((person) => {
+        [Event.host, Event.user].forEach((person) => {
             this.mailService
-                .createBooking(
+                .createEvent(
                     person.firstName,
                     person.email,
-                    booking.title ?? 'New Booking',
-                    booking.startDate.toISOString(),
-                    booking.endDate.toISOString(),
-                    booking.timezone ?? 'UTC',
-                    booking.meetingUrl ?? 'N/A',
-                    booking.notes ?? ''
+                    Event.title ?? 'New Event',
+                    Event.startDate.toISOString(),
+                    Event.endDate.toISOString(),
+                    Event.timezone ?? 'UTC',
+                    Event.meetingUrl ?? 'N/A',
+                    Event.notes ?? ''
                 )
-                .catch((err) => console.error(`Failed to send create booking email to ${person.email}:`, err));
+                .catch((err) => console.error(`Failed to send create Event email to ${person.email}:`, err));
         });
 
         return buildResponse({
-            message: "booking successfully created",
-            data: booking
+            message: "Event successfully created",
+            data: Event
         })
     }
 
@@ -106,7 +106,7 @@ export class BookingService {
         const endOfDay = new Date(options.date);
         endOfDay.setUTCHours(23, 59, 59, 999);
 
-        const bookedSlots = await this.prisma.booking.findMany({
+        const bookedSlots = await this.prisma.event.findMany({
             where: {
                 hostId: options.hostId,
                 startDate: { gte: startOfDay },
@@ -127,48 +127,48 @@ export class BookingService {
         });
     }
 
-    async updateBooking(user: User, bookingId: number, dto: UpdateBookingDto) {
-        const booking = await this.prisma.booking.findUnique({
-            where: { id: bookingId }
+    async updateEvent(user: User, EventId: number, dto: UpdateEventDto) {
+        const Event = await this.prisma.event.findUnique({
+            where: { id: EventId }
         });
 
-        if (!booking) {
-            throw new NotFoundException('Booking not found');
+        if (!Event) {
+            throw new NotFoundException('Event not found');
         }
 
-        if (booking.userId !== user.id && booking.hostId !== user.id) {
-            throw new ForbiddenException('You are not authorized to update this booking');
+        if (Event.userId !== user.id && Event.hostId !== user.id) {
+            throw new ForbiddenException('You are not authorized to update this Event');
         }
 
-        const requestedStartDate = dto.startDate ? new Date(dto.startDate) : booking.startDate;
-        const requestedEndDate = dto.endDate ? new Date(dto.endDate) : booking.endDate;
+        const requestedStartDate = dto.startDate ? new Date(dto.startDate) : Event.startDate;
+        const requestedEndDate = dto.endDate ? new Date(dto.endDate) : Event.endDate;
 
         if (dto.startDate || dto.endDate) {
             const now = new Date();
             if (requestedStartDate < now) {
-                throw new BadRequestException('Cannot schedule a booking in the past');
+                throw new BadRequestException('Cannot schedule a Event in the past');
             }
 
             if (requestedStartDate >= requestedEndDate) {
                 throw new BadRequestException('End date must be after the start date');
             }
 
-            const conflictingBooking = await this.prisma.booking.findFirst({
+            const conflictingEvent = await this.prisma.event.findFirst({
                 where: {
-                    id: { not: bookingId },
-                    hostId: booking.hostId,
+                    id: { not: EventId },
+                    hostId: Event.hostId,
                     startDate: { lt: requestedEndDate },
                     endDate: { gt: requestedStartDate },
                 }
             });
 
-            if (conflictingBooking) {
+            if (conflictingEvent) {
                 throw new BadRequestException('The host is already booked for this new time slot');
             }
         }
 
-        const updatedBooking = await this.prisma.booking.update({
-            where: { id: bookingId },
+        const updatedEvent = await this.prisma.event.update({
+            where: { id: EventId },
             data: {
                 startDate: requestedStartDate,
                 endDate: requestedEndDate,
@@ -181,45 +181,45 @@ export class BookingService {
             }
         });
 
-        [updatedBooking.host, updatedBooking.user].forEach((person) => {
+        [updatedEvent.host, updatedEvent.user].forEach((person) => {
             this.mailService
-                .updateBooking(
+                .updateEvent(
                     person.firstName,
                     person.email,
-                    updatedBooking.title ?? 'Updated Booking',
-                    updatedBooking.startDate.toISOString(),
-                    updatedBooking.endDate.toISOString(),
-                    updatedBooking.notes ?? ''
+                    updatedEvent.title ?? 'Updated Event',
+                    updatedEvent.startDate.toISOString(),
+                    updatedEvent.endDate.toISOString(),
+                    updatedEvent.notes ?? ''
                 )
-                .catch((err) => console.error(`Failed to send update booking email to ${person.email}:`, err));
+                .catch((err) => console.error(`Failed to send update Event email to ${person.email}:`, err));
         });
 
         return buildResponse({
-            message: "Booking successfully updated",
-            data: updatedBooking
+            message: "Event successfully updated",
+            data: updatedEvent
         });
     }
 
-    async fetchBooking(user: User, bookingId: number) {
-        const booking = await this.prisma.booking.findUnique({
-            where: { id: bookingId },
+    async fetchEvent(user: User, EventId: number) {
+        const Event = await this.prisma.event.findUnique({
+            where: { id: EventId },
             include: {
                 host: true,
                 user: true
             }
         });
 
-        if (!booking) {
-            throw new NotFoundException('Booking not found');
+        if (!Event) {
+            throw new NotFoundException('Event not found');
         }
 
-        if (booking.userId !== user.id && booking.hostId !== user.id) {
-            throw new ForbiddenException('You are not authorized to view this booking');
+        if (Event.userId !== user.id && Event.hostId !== user.id) {
+            throw new ForbiddenException('You are not authorized to view this Event');
         }
 
         return buildResponse({
-            message: "Booking retrieved successfully",
-            data: booking
+            message: "Event retrieved successfully",
+            data: Event
         });
     }
 }

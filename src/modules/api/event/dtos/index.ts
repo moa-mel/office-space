@@ -2,7 +2,7 @@ import { Type } from "class-transformer";
 import { IsDate, IsNumber, IsString } from "class-validator";
 
 
-export class CreateBookingDto {
+export class CreateEventDto {
     @Type(() => Number)
     @IsNumber()
     officeId: number;
@@ -30,7 +30,7 @@ export class CreateBookingDto {
     meetingUrl?: string;
 }
 
-export class UpdateBookingDto {
+export class UpdateEventDto {
     @IsDate()
     startDate: Date;
 

@@ -29,11 +29,17 @@ enum MessageType {
   FILE
 }
 
-enum BookingStatus {
+enum EventStatus {
   PENDING
   CONFIRMED
   CANCELLED
   REJECTED
+}
+
+enum AttendeeStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
 }
 
 model User {
@@ -54,8 +60,10 @@ model User {
   participants     Participant[]
   messageReads     MessageRead[]
   officeMembers    OfficeMember[]
-  bookings         Booking[]      @relation("BookingsCreated")
-  receivedBookings Booking[]      @relation("BookingsReceived")
+  eventsCreated    Event[]        @relation("EventsCreated")
+  eventsHosting    Event[]        @relation("EventsReceived")
+  eventAttendances EventAttendee[]
+  callParticipations CallParticipant[]
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @updatedAt
 
@@ -72,7 +80,8 @@ model Office {
   user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   members       OfficeMember[]
   conversations Conversation[]
-  bookings      Booking[]
+  events        Event[]
+  calls         Call[]
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
 }
@@ -165,21 +174,86 @@ model MessageRead {
   @@index([userId])
 }
 
-model Booking{
-  id        Int       @id @default(autoincrement())
+// Scheduled events (e.g. a 1:1 booking between a user and a host)
+
+model Event {
+  id         Int             @id @default(autoincrement())
+  userId     Int
+  user       User            @relation("EventsCreated", fields: [userId], references: [id], onDelete: Cascade)
+  hostId     Int
+  host       User            @relation("EventsReceived", fields: [hostId], references: [id], onDelete: Cascade)
+  officeId   Int
+  office     Office          @relation(fields: [officeId], references: [id], onDelete: Cascade)
+  startDate  DateTime
+  endDate    DateTime
+  status     EventStatus     @default(PENDING)
+  title      String?
+  notes      String?         @db.Text
+  timezone   String?         // E.g. "America/New_York"
+  meetingUrl String?         // E.g. Zoom or Google Meet link
+  attendees  EventAttendee[]
+  createdAt  DateTime        @default(now())
+  updatedAt  DateTime        @updatedAt
+
+  @@index([officeId])
+  @@index([startDate])
+}
+
+// Extra invitees beyond the creator/host (e.g. group meetings)
+model EventAttendee {
+  id        Int            @id @default(autoincrement())
   userId    Int
-  user      User      @relation("BookingsCreated", fields: [userId], references: [id], onDelete: Cascade)
-  hostId    Int
-  host      User      @relation("BookingsReceived", fields: [hostId], references: [id], onDelete: Cascade)
-  officeId  Int
-  office    Office    @relation(fields: [officeId], references: [id], onDelete: Cascade)
-  startDate DateTime
-  endDate   DateTime
-  status    BookingStatus @default(PENDING)
-  title     String?
-  notes     String?       @db.Text
-  timezone  String?       // E.g. "America/New_York"
-  meetingUrl String?      // E.g. Zoom or Google Meet link
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  eventId   Int
+  status    AttendeeStatus @default(PENDING)
+  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  event     Event          @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  createdAt DateTime       @default(now())
+
+  @@unique([eventId, userId])
+  @@index([userId])
+}
+
+// Calls (video/audio rooms tied to an office)
+
+model Call {
+  id           String            @id @default(cuid())
+  roomId       String            @unique @default(cuid())
+  title        String
+  officeId     Int
+  office       Office            @relation(fields: [officeId], references: [id], onDelete: Cascade)
+  scheduledAt  DateTime?
+  startedAt    DateTime?
+  endedAt      DateTime?
+  transcript   String?           @db.Text
+  aiSummary    String?           @db.Text
+  participants CallParticipant[]
+  chunks       DocumentChunk[]
+  createdAt    DateTime          @default(now())
+
+  @@index([officeId])
+}
+
+model CallParticipant {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  callId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  call      Call     @relation(fields: [callId], references: [id], onDelete: Cascade)
+  joinedAt  DateTime @default(now())
+
+  @@unique([callId, userId])
+  @@index([userId])
+}
+
+// RAG: embedded chunks of call summaries for semantic search
+
+model DocumentChunk {
+  id        String                       @id @default(cuid())
+  content   String                       @db.Text
+  embedding Unsupported("vector(1536)")?
+  callId    String
+  call      Call                         @relation(fields: [callId], references: [id], onDelete: Cascade)
+  createdAt DateTime                     @default(now())
+
+  @@index([callId])
 }

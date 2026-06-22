@@ -3,7 +3,9 @@ import { AuthModule } from "./auth";
 import { OfficeModule } from "./office";
 import { ChatModule } from "./chat";
 import { UserModule } from "./user";
-import { BookingModule } from "./booking";
+import { EventModule } from "./event";
+import { CallModule } from "./call";
+import { AIModule } from "./ai";
 
 
 @Module({
@@ -12,7 +14,9 @@ import { BookingModule } from "./booking";
     UserModule,
     OfficeModule,
     ChatModule,
-    BookingModule,
+    EventModule,
+    CallModule,
+    AIModule,
   ],
 })
 export class ApiModule {}

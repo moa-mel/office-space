@@ -1,26 +1,26 @@
 import { Body, Controller, Get, Param, ParseIntPipe, Patch, Post, Query, Req, UseGuards } from "@nestjs/common"
-import { BookingService } from "../services"
+import { EventService } from "../services"
 import { AuthGuard } from "../../auth/guards"
-import { CreateBookingDto, GetHostAvailabilityDto, UpdateBookingDto } from "../dtos"
+import { CreateEventDto, GetHostAvailabilityDto, UpdateEventDto } from "../dtos"
 import { User } from "@prisma/client";
 import { GetUser } from "../../user/decorators";
 
 @UseGuards(AuthGuard)
 @Controller({
-    path: 'bookings'
+    path: 'Events'
 })
-export class BookingController {
+export class EventController {
     constructor(
-        private readonly bookingService: BookingService
+        private readonly EventService: EventService
     ) { }
 
     @Post()
-    async createBooking(
+    async createEvent(
         @GetUser() user: User,
         @Param('officeId', ParseIntPipe) officeId: number,
-        @Body() dto: CreateBookingDto
+        @Body() dto: CreateEventDto
     ) {
-        return this.bookingService.createBooking(user, officeId, dto);
+        return this.EventService.createEvent(user, officeId, dto);
     }
 
     @Get('availability')
@@ -28,23 +28,23 @@ export class BookingController {
         @GetUser() user: User,
         @Query() dto: GetHostAvailabilityDto
     ) {
-        return this.bookingService.getHostAvailability(dto);
+        return this.EventService.getHostAvailability(dto);
     }
 
     @Get(':id')
-    async fetchBooking(
+    async fetchEvent(
         @GetUser() user: User,
         @Param('id', ParseIntPipe) id: number
     ) {
-        return this.bookingService.fetchBooking(user, id);
+        return this.EventService.fetchEvent(user, id);
     }
 
     @Patch(':id')
-    async updateBooking(
+    async updateEvent(
         @GetUser() user: User,
         @Param('id', ParseIntPipe) id: number,
-        @Body() dto: UpdateBookingDto
+        @Body() dto: UpdateEventDto
     ) {
-        return this.bookingService.updateBooking(user, id, dto);
+        return this.EventService.updateEvent(user, id, dto);
     }
 }

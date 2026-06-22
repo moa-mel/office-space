@@ -106,7 +106,7 @@ export class MailService {
         }
     }
 
-    async createBooking(
+    async createEvent(
         name: string,
         email: string,
         title: string,
@@ -117,7 +117,7 @@ export class MailService {
         notes: string
     ) {
         try {
-            const filePath = path.join(__dirname, 'templates', 'create-booking.html');
+            const filePath = path.join(__dirname, 'templates', 'create-Event.html');
 
             let html = fs.readFileSync(filePath, 'utf8');
 
@@ -131,14 +131,14 @@ export class MailService {
                 .replace(/{{notes}}/g, notes || 'N/A')
                 .replace(/{{year}}/g, String(new Date().getFullYear()));
 
-            await this.sendMail(email, 'New Booking Scheduled', html);
+            await this.sendMail(email, 'New Event Scheduled', html);
         } catch (error) {
             this.logger.error(`Failed to send email to ${email}`, error);
             throw error;
         }
     }
 
-    async updateBooking(
+    async updateEvent(
         name: string,
         email: string,
         title: string,
@@ -147,7 +147,7 @@ export class MailService {
         notes: string
     ) {
         try {
-            const filePath = path.join(__dirname, 'templates', 'create-booking.html');
+            const filePath = path.join(__dirname, 'templates', 'create-Event.html');
 
             let html = fs.readFileSync(filePath, 'utf8');
 
@@ -159,7 +159,7 @@ export class MailService {
                 .replace(/{{notes}}/g, notes || 'N/A')
                 .replace(/{{year}}/g, String(new Date().getFullYear()));
 
-            await this.sendMail(email, 'New Booking Scheduled', html);
+            await this.sendMail(email, 'New Event Scheduled', html);
         } catch (error) {
             this.logger.error(`Failed to send email to ${email}`, error);
             throw error;
