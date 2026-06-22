@@ -1,7 +1,7 @@
 import logger from 'moment-logger';
 import Redis from 'ioredis';
 import createServer, { CreateServerOptions } from '@/www';
-import { port, isProduction, allowedDomains, redisHost, redisPort, redisUsername, redisPassword } from '@/config';
+import { port, isProduction, allowedDomains } from '@/config';
 
 async function bootstrap() {
   try {
@@ -19,33 +19,32 @@ async function bootstrap() {
 
     await createServer(options);
 
+    // Build the connection options object
     const redisOptions: any = {
-      host: redisHost,
-      port: redisPort,
-      username: redisUsername,
-      password: redisPassword,
-      // Remove TLS configuration since it's causing issues
-      // Add connection retry strategy
       retryStrategy: (times: number) => {
-        const delay = Math.min(times * 100, 5000);
+        if (times > 10) {
+          logger.error('Redis connection failed permanently after 10 attempts.');
+          return null; // Stop retrying
+        }
+        const delay = Math.min(times * 200, 2000);
         logger.warn(`Retrying Redis connection in ${delay}ms`);
         return delay;
       },
-      // Enable auto-reconnect
       reconnectOnError: (err: Error) => {
         logger.error('Redis connection error:', err.message);
-        return true; // Reconnect on any error
+        return true; 
       }
     };
 
-    // Only add TLS configuration if explicitly needed
+    // Safely append TLS if required by your cloud provider (like Render/Railway)
     if (process.env.REDIS_TLS === 'true') {
       redisOptions.tls = {
         rejectUnauthorized: false
       };
     }
 
-    const redis = new Redis(redisOptions);
+    // Initialize Redis using the URL and your dynamic options payload
+    const redis = new Redis(process.env.REDIS_URL!, redisOptions);
 
     // Log Redis connection status
     redis.on('connect', () => {
@@ -54,10 +53,9 @@ async function bootstrap() {
     });
 
     redis.on('error', (err) => {
-      logger.error('Redis error:', err);
-      console.error('❌ Redis FAIL:', err);
+      logger.error('Redis error:', err.message);
+      console.error('❌ Redis FAIL:', err.message);
     });
-
 
     logger.info(`Server started on port ${port}`);
   } catch (error) {
