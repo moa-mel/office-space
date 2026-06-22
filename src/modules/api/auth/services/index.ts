@@ -76,7 +76,7 @@ export class AuthService {
                     email: options.email,
                     password: hashedPassword,
                     isVerified: false,
-                    emailVerifiedAt: null, // make sure this is nullable in Prisma
+                    emailVerifiedAt: null,
                 },
             });
 
@@ -99,9 +99,12 @@ export class AuthService {
         // Send OTP email
         await this.emailService.sendEmailOTP(user.firstName, user.email, otp);
 
+        // Remove the password property from the user object
+        const { password, ...userWithoutPassword } = user;
+
         return buildResponse({
             message: 'User created successfully. Check your email for verification code',
-            data: user,
+            data: userWithoutPassword,
         });
     }
 

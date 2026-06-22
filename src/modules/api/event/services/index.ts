@@ -71,11 +71,21 @@ export class EventService {
                 notes: dto.notes,
                 timezone: dto.timezone,
                 meetingUrl: meetingUrl,
+                attendees: {
+                    create: [
+                        { userId: user.id },
+                        { userId: dto.hostId }
+                    ]
+                }
             },
             include: {
                 host: true,
                 user: true,
-                attendees: true
+                attendees: {
+                    include: {
+                        user: true
+                    }
+                }
             }
         });
 
