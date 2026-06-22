@@ -74,7 +74,8 @@ export class EventService {
             },
             include: {
                 host: true,
-                user: true
+                user: true,
+                attendees: true
             }
         });
 

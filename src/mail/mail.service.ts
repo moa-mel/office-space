@@ -10,14 +10,18 @@ export class MailService {
     private readonly logger = new Logger(MailService.name);
 
     constructor(private configService: ConfigService) {
+        const port = Number(this.configService.get('EMAIL_PORT'));
         this.transporter = nodemailer.createTransport({
             host: this.configService.get('EMAIL_HOST'),
-            port: this.configService.get('EMAIL_PORT'),
-            secure: true,
+            port: port,
+            secure: port === 465,
             auth: {
                 user: this.configService.get('EMAIL_USER'),
                 pass: this.configService.get('EMAIL_PASS'),
             },
+            tls: {
+            rejectUnauthorized: false
+        }
         })
     }
 
