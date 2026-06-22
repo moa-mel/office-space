@@ -20,11 +20,12 @@ const logger = new Logger('RedisIntegration');
           host,
           port,
           password,
-          tls: {},
+          // ONLY enable TLS if required
+          tls: host?.includes('upstash') ? {} : undefined,
         };
       },
       inject: [ConfigService],
     }),
   ],
 })
-export class RedisIntegrationModule {}
+export class RedisIntegrationModule { }
