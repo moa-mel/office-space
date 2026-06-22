@@ -14,18 +14,19 @@ const logger = new Logger('RedisIntegration');
         const host = configService.get<string>('REDIS_HOST');
         const port = Number(configService.get<number>('REDIS_PORT'));
         const password = configService.get<string>('REDIS_PASSWORD');
+        const url = configService.get<string>('redis_url');
         logger.debug(`Connecting to Redis at ${host}:${port}`);
         return {
           type: 'single',
           host,
           port,
           password,
-          // ONLY enable TLS if required
-          tls: host?.includes('upstash') ? {} : undefined,
+          url,
+          tls: {},
         };
       },
       inject: [ConfigService],
     }),
   ],
 })
-export class RedisIntegrationModule { }
+export class RedisIntegrationModule {}
