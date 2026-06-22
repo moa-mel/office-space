@@ -11,16 +11,16 @@ const logger = new Logger('RedisIntegration');
     ConfigModule.forRoot({ isGlobal: true }),
     RedisModule.forRootAsync({
       useFactory: (configService: ConfigService) => {
-        const host = configService.get<string>('REDIS_HOST');
-        const port = Number(configService.get<number>('REDIS_PORT'));
-        const password = configService.get<string>('REDIS_PASSWORD');
+        // const host = configService.get<string>('REDIS_HOST');
+        // const port = Number(configService.get<number>('REDIS_PORT'));
+        // const password = configService.get<string>('REDIS_PASSWORD');
         const url = configService.get<string>('redis_url');
-        logger.debug(`Connecting to Redis at ${host}:${port}`);
+        // logger.debug(`Connecting to Redis at ${host}:${port}`);
         return {
           type: 'single',
-          host,
-          port,
-          password,
+          // host,
+          // port,
+          // password,
           url,
           tls: {},
         };

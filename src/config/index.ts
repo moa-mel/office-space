@@ -32,18 +32,18 @@ const runtimeEnvironment: RequiredEnvironment[] = [
     name: 'REFRESH_JWT_SECRET_EXPIRES',
     type: RequiredEnvironmentTypes.String,
   },
-  {
-    name: 'REDIS_HOST',
-    type: RequiredEnvironmentTypes.String,
-  },
-  {
-    name: 'REDIS_PORT',
-    type: RequiredEnvironmentTypes.Number,
-  },
-  {
-    name: 'REDIS_PASSWORD',
-    type: RequiredEnvironmentTypes.String,
-  },
+  // {
+  //   name: 'REDIS_HOST',
+  //   type: RequiredEnvironmentTypes.String,
+  // },
+  // {
+  //   name: 'REDIS_PORT',
+  //   type: RequiredEnvironmentTypes.Number,
+  // },
+  // {
+  //   name: 'REDIS_PASSWORD',
+  //   type: RequiredEnvironmentTypes.String,
+  // },
 ];
 
 validate(runtimeEnvironment);
