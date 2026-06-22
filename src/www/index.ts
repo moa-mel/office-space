@@ -10,6 +10,7 @@ import { NestExpressApplication } from "@nestjs/platform-express";
 import helmet from "helmet";
 import morgan from "morgan";
 import { IoAdapter } from "@nestjs/platform-socket.io";
+import { Request, Response } from "express";
 
 
 export interface CreateServerOptions {
@@ -40,9 +41,10 @@ export default async (
   app.use(helmet());
   app.enableCors(corsOptions);
   app.use(morgan(options.production ? 'combined' : 'dev'));
-
-  // apply global JSON parser
   app.useBodyParser('json', { limit: '100mb' });
+
+  const server = app.getHttpAdapter().getInstance();
+  server.all('/', (req: Request, res: Response) => res.status(200).send('OK'));
 
   app.enableVersioning({
     type: VersioningType.URI,
@@ -56,10 +58,10 @@ export default async (
 
   app.useWebSocketAdapter(new IoAdapter(app));
 
-  app.listen(options.port);
+  await app.listen(options.port); 
 
   const prismaService = app.get(PrismaService);
   await prismaService.enableShutdownHooks(app);
 
   return app;
-};
+}
