@@ -1,15 +1,15 @@
 import { PrismaService } from "@/modules/core/prisma/services";
 import { BadRequestException, forwardRef, Inject, Injectable, InternalServerErrorException, Logger, NotFoundException } from "@nestjs/common";
-import OpenAI from "openai";
 import { ParseSchedulingRequestDto } from "../dtos";
 import { EventService } from "../../event/services";
 import { CallService } from "../../call/services";
+import { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold } from "@google/generative-ai";
 
 @Injectable()
 export class AIService {
-    private openai: OpenAI;
 
     private readonly logger = new Logger(AIService.name);
+    private genAI: GoogleGenerativeAI;
     constructor(
         private prisma: PrismaService, 
         @Inject(forwardRef(() => EventService))
@@ -17,7 +17,12 @@ export class AIService {
         
         @Inject(forwardRef(() => CallService))
         private callService: CallService,) {
-        this.openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+        const apiKey = process.env.GEMINI_API_KEY;
+        if (!apiKey) {
+            this.logger.error('GEMINI_API_KEY is not set in environment variables.');
+            throw new InternalServerErrorException('AI Service is not configured properly.');
+        }
+        this.genAI = new GoogleGenerativeAI(apiKey);
     }
 
     // Summarize a call transcript
@@ -26,15 +31,16 @@ export class AIService {
         if (!call?.transcript) return 'No transcript available.';
 
         try {
-            const response = await this.openai.chat.completions.create({
-                model: 'gpt-4o',
-                messages: [
-                    { role: 'system', content: 'You are an AI assistant for a virtual office. Summarize meeting transcripts concisely: key decisions, action items, and next steps.' },
-                    { role: 'user', content: `Summarize this meeting:\n\n${call.transcript}` },
-                ],
-            });
+            const model = this.genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+            const prompt = `You are an AI assistant for a virtual office. Summarize meeting transcripts concisely: key decisions, action items, and next steps.
 
-            const summary = response.choices[0].message.content ?? '';
+Summarize this meeting:
+
+${call.transcript}`;
+
+            const result = await model.generateContent(prompt);
+            const response = result.response;
+            const summary = response.text();
             await this.prisma.call.update({ where: { id: callId }, data: { aiSummary: summary } });
             return summary;
         } catch (error) {
@@ -46,23 +52,21 @@ export class AIService {
     // Parse a natural language scheduling request
     async parseSchedulingRequest(options: ParseSchedulingRequestDto) {
         try {
-            const response = await this.openai.chat.completions.create({
-                model: 'gpt-4o',
-                messages: [
-                    {
-                        role: 'system',
-                        content: `You are a scheduling assistant for a virtual office.
+            const model = this.genAI.getGenerativeModel({
+                model: "gemini-1.5-flash",
+                generationConfig: { responseMimeType: "application/json" },
+            });
+            const prompt = `You are a scheduling assistant for a virtual office.
                            Today is ${new Date().toISOString()}.
                            Extract scheduling intent from the user's message and return JSON:
-                           { "action": "create_event" | "create_call" | "list_events" | "cancel_event" | "unknown", "title": string, "startTime": ISO string, "endTime": ISO string, "attendeeEmails"?: string[] }. If attendeeEmails are not mentioned, do not include the field.`,
-                    },
-                    { role: 'user', content: options.message },
-                ],
-                response_format: { type: 'json_object' },
-            });
+                           { "action": "create_event" | "create_call" | "list_events" | "cancel_event" | "unknown", "title": string, "startTime": ISO string, "endTime": ISO string, "attendeeEmails"?: string[] }. If attendeeEmails are not mentioned, do not include the field.
+                           
+User message: "${options.message}"`;
 
-            const content = response.choices[0].message.content;
-            return JSON.parse(content ?? '{}');
+            const result = await model.generateContent(prompt);
+            const response = result.response;
+            const content = response.text();
+            return JSON.parse(content);
         } catch (error) {
             this.logger.error(`Failed to parse scheduling request for user ${options.userId}:`, error);
             throw new InternalServerErrorException('Failed to parse scheduling request.');
@@ -182,16 +186,27 @@ export class AIService {
             : 'User has no upcoming events.';
 
         try {
-            const response = await this.openai.chat.completions.create({
-                model: 'gpt-4o',
-                messages: [
-                    { role: 'system', content: `You are an AI engineer assistant in a virtual office platform. Help users manage their schedule, understand meeting context, and answer office-related questions.\n\nContext: ${context}` },
-                    ...history as any,
-                    { role: 'user', content: message },
-                ],
+            const model = this.genAI.getGenerativeModel({
+                model: "gemini-1.5-flash",
+                systemInstruction: `You are an AI engineer assistant in a virtual office platform. Help users manage their schedule, understand meeting context, and answer office-related questions.\n\nContext: ${context}`,
+                safetySettings: [
+                    {
+                        category: HarmCategory.HARM_CATEGORY_HARASSMENT,
+                        threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH,
+                    },
+                ]
             });
 
-            return response.choices[0].message.content;
+            const chat = model.startChat({
+                history: history.map(h => ({
+                    role: h.role === 'user' ? 'user' : 'model', // Gemini uses 'user' and 'model'
+                    parts: [{ text: h.content }]
+                }))
+            });
+
+            const result = await chat.sendMessage(message);
+            const response = result.response;
+            return response.text();
         } catch (error) {
             this.logger.error(`Failed to get chat response for user ${userId}:`, error);
             throw new InternalServerErrorException('Failed to get chat response.');
