@@ -54,8 +54,7 @@ export class AIService {
                         content: `You are a scheduling assistant for a virtual office.
                            Today is ${new Date().toISOString()}.
                            Extract scheduling intent from the user's message and return JSON:
-                           { "action": "create_event" | "create_call" | "list_events" | "cancel_event" | "unknown",
-                           "title": string, "startTime": ISO string, "endTime": ISO string, "attendeeEmails": string[] }`,
+                           { "action": "create_event" | "create_call" | "list_events" | "cancel_event" | "unknown", "title": string, "startTime": ISO string, "endTime": ISO string, "attendeeEmails"?: string[] }. If attendeeEmails are not mentioned, do not include the field.`,
                     },
                     { role: 'user', content: options.message },
                 ],
