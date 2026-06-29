@@ -5,10 +5,6 @@ import { IsDate, IsNumber, IsString } from "class-validator";
 export class CreateEventDto {
     @Type(() => Number)
     @IsNumber()
-    officeId: number;
-
-    @Type(() => Number)
-    @IsNumber()
     hostId: number;
 
     @IsDate()
@@ -25,9 +21,6 @@ export class CreateEventDto {
 
     @IsString()
     timezone?: string;
-
-    @IsString()
-    meetingUrl?: string;
 }
 
 export class UpdateEventDto {

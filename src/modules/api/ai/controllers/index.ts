@@ -1,5 +1,6 @@
-import { Body, Controller, Param, Post } from "@nestjs/common";
+import { Body, Controller, HttpCode, HttpStatus, Param, Post, ValidationPipe } from "@nestjs/common";
 import { AIService } from "../services";
+import { ParseSchedulingRequestDto } from "../dtos";
 
 @Controller({
     path: 'ai'
@@ -7,11 +8,14 @@ import { AIService } from "../services";
 
 export class AIController {
     constructor(private readonly aiService: AIService) { }
+    @HttpCode(HttpStatus.OK)
     @Post('schedule')
-    parseSchedule(@Body() body: { userId: string; message: string }) {
-        return this.aiService.parseSchedulingRequest(body.userId, body.message);
+    parseSchedule(
+        @Body(ValidationPipe) dto: ParseSchedulingRequestDto) {
+        return this.aiService.handleParseSchedulingRequest(dto);
     }
 
+    @HttpCode(HttpStatus.OK)
     @Post('call/:callId/summarize')
     summarize(@Param('callId') callId: string) {
         return this.aiService.summarizeCall(callId);

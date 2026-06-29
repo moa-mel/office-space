@@ -57,14 +57,14 @@ export class EventService {
             throw new BadRequestException('The user is already booked for this time slot');
         }
 
-        const meetingUrl = dto.meetingUrl || `https://meet.jit.si/office-space-${generateId({ type: 'identifier' })}`;
+        const meetingUrl = `https://meet.jit.si/office-space-${generateId({ type: 'identifier' })}`;
 
         // Create the Event record
         const Event = await this.prisma.event.create({
             data: {
                 userId: user.id,
                 hostId: dto.hostId,
-                officeId: dto.officeId,
+                officeId: officeId,
                 startDate: requestedStartDate,
                 endDate: requestedEndDate,
                 title: dto.title,
