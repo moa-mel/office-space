@@ -31,7 +31,7 @@ export class AIService {
         if (!call?.transcript) return 'No transcript available.';
 
         try {
-            const model = this.genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+            const model = this.genAI.getGenerativeModel({ model: "gemini-pro" });
             const prompt = `You are an AI assistant for a virtual office. Summarize meeting transcripts concisely: key decisions, action items, and next steps.
 
 Summarize this meeting:
@@ -53,7 +53,7 @@ ${call.transcript}`;
     async parseSchedulingRequest(options: ParseSchedulingRequestDto) {
         try {
             const model = this.genAI.getGenerativeModel({
-                model: "gemini-1.5-flash",
+                model: "gemini-pro",
                 generationConfig: { responseMimeType: "application/json" },
             });
             const prompt = `You are a scheduling assistant for a virtual office.
@@ -187,7 +187,7 @@ User message: "${options.message}"`;
 
         try {
             const model = this.genAI.getGenerativeModel({
-                model: "gemini-1.5-flash",
+                model: "gemini-pro",
                 systemInstruction: `You are an AI engineer assistant in a virtual office platform. Help users manage their schedule, understand meeting context, and answer office-related questions.\n\nContext: ${context}`,
                 safetySettings: [
                     {
