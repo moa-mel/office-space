@@ -1,5 +1,5 @@
 import { PrismaService } from "@/modules/core/prisma/services";
-import { BadRequestException, Injectable, InternalServerErrorException, Logger, NotFoundException } from "@nestjs/common";
+import { BadRequestException, forwardRef, Inject, Injectable, InternalServerErrorException, Logger, NotFoundException } from "@nestjs/common";
 import OpenAI from "openai";
 import { ParseSchedulingRequestDto } from "../dtos";
 import { EventService } from "../../event/services";
@@ -7,11 +7,16 @@ import { CallService } from "../../call/services";
 
 @Injectable()
 export class AIService {
-
     private openai: OpenAI;
 
     private readonly logger = new Logger(AIService.name);
-    constructor(private prisma: PrismaService, private eventService: EventService, private callService: CallService,) {
+    constructor(
+        private prisma: PrismaService, 
+        @Inject(forwardRef(() => EventService))
+        private eventService: EventService,
+        
+        @Inject(forwardRef(() => CallService))
+        private callService: CallService,) {
         this.openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
     }
 

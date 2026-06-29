@@ -1,16 +1,21 @@
-import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
+import { AIService } from "@/modules/api/ai/services";
+import { BadRequestException, ForbiddenException, forwardRef, Inject, Injectable, NotFoundException } from "@nestjs/common";
 import { PrismaService } from "@/modules/core/prisma/services";
 import { buildResponse } from "@/utils/api-response-util";
 import { MailService } from "@/mail/mail.service";
 import { generateId } from "@/utils";
 import { User } from "@prisma/client";
 import { CreateEventDto, GetHostAvailabilityDto, UpdateEventDto } from "../dtos";
+import { CallService } from "../../call/services";
 
 @Injectable()
 export class EventService {
     constructor(
         private prisma: PrismaService,
         private mailService: MailService,
+        
+        @Inject(forwardRef(() => AIService)) 
+        private readonly aiService: AIService,
     ) { }
 
     async createEvent(user: User, officeId: number, dto: CreateEventDto) {

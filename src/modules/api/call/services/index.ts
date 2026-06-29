@@ -1,14 +1,16 @@
 import { AIService } from "@/modules/api/ai/services";
 import { PrismaService } from "@/modules/core/prisma/services";
 import { generateId } from "@/utils";
-import { Injectable, NotFoundException } from "@nestjs/common";
+import { forwardRef, Inject, Injectable, NotFoundException } from "@nestjs/common";
 import { CreateCallDto } from "../dtos";
 
 @Injectable()
 export class CallService {
     constructor(
         private prisma: PrismaService,
-        private aiService: AIService,
+
+        @Inject(forwardRef(() => AIService))
+        private aiService: AIService
     ) { }
 
     async createCall(officeId: number, dto: CreateCallDto) {
