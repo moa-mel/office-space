@@ -43,29 +43,29 @@ enum AttendeeStatus {
 }
 
 model User {
-  id               Int            @id @default(autoincrement())
-  identifier       String         @unique
-  firstName        String
-  lastName         String
-  email            String         @unique
-  password         String
-  isVerified       Boolean        @default(false)
-  emailVerifiedAt  DateTime?
-  googleId         String?        @unique
-  picture          String?
-  verificationCode String?
-  codeTTL          DateTime?
-  offices          Office[]
-  messages         Message[]
-  participants     Participant[]
-  messageReads     MessageRead[]
-  officeMembers    OfficeMember[]
-  eventsCreated    Event[]        @relation("EventsCreated")
-  eventsHosting    Event[]        @relation("EventsReceived")
-  eventAttendances EventAttendee[]
+  id                 Int               @id @default(autoincrement())
+  identifier         String            @unique
+  firstName          String
+  lastName           String
+  email              String            @unique
+  password           String
+  isVerified         Boolean           @default(false)
+  emailVerifiedAt    DateTime?
+  googleId           String?           @unique
+  picture            String?
+  verificationCode   String?
+  codeTTL            DateTime?
+  offices            Office[]
+  messages           Message[]
+  participants       Participant[]
+  messageReads       MessageRead[]
+  officeMembers      OfficeMember[]
+  eventsCreated      Event[]           @relation("EventsCreated")
+  eventsHosting      Event[]           @relation("EventsReceived")
+  eventAttendances   EventAttendee[]
   callParticipations CallParticipant[]
-  createdAt        DateTime       @default(now())
-  updatedAt        DateTime       @updatedAt
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
 
   @@index([email])
 }
@@ -189,8 +189,8 @@ model Event {
   status     EventStatus     @default(PENDING)
   title      String?
   notes      String?         @db.Text
-  timezone   String?         // E.g. "America/New_York"
-  meetingUrl String?         // E.g. Zoom or Google Meet link
+  timezone   String? // E.g. "America/New_York"
+  meetingUrl String? // E.g. Zoom or Google Meet link
   attendees  EventAttendee[]
   createdAt  DateTime        @default(now())
   updatedAt  DateTime        @updatedAt
@@ -216,8 +216,7 @@ model EventAttendee {
 // Calls (video/audio rooms tied to an office)
 
 model Call {
-  id           String            @id @default(cuid())
-  roomId       String            @unique @default(cuid())
+  id           Int               @id @default(autoincrement())
   title        String
   officeId     Int
   office       Office            @relation(fields: [officeId], references: [id], onDelete: Cascade)
@@ -234,12 +233,12 @@ model Call {
 }
 
 model CallParticipant {
-  id        Int      @id @default(autoincrement())
-  userId    Int
-  callId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  call      Call     @relation(fields: [callId], references: [id], onDelete: Cascade)
-  joinedAt  DateTime @default(now())
+  id       Int      @id @default(autoincrement())
+  userId   Int
+  callId   Int
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  call     Call     @relation(fields: [callId], references: [id], onDelete: Cascade)
+  joinedAt DateTime @default(now())
 
   @@unique([callId, userId])
   @@index([userId])
@@ -251,7 +250,7 @@ model DocumentChunk {
   id        String                       @id @default(cuid())
   content   String                       @db.Text
   embedding Unsupported("vector(1536)")?
-  callId    String
+  callId    Int
   call      Call                         @relation(fields: [callId], references: [id], onDelete: Cascade)
   createdAt DateTime                     @default(now())
 

@@ -4,6 +4,7 @@ import { ParseSchedulingRequestDto } from "../dtos";
 import { EventService } from "../../event/services";
 import { CallService } from "../../call/services";
 import { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold } from "@google/generative-ai";
+import { buildResponse } from "@/utils/api-response-util";
 
 @Injectable()
 export class AIService {
@@ -11,10 +12,10 @@ export class AIService {
     private readonly logger = new Logger(AIService.name);
     private genAI: GoogleGenerativeAI;
     constructor(
-        private prisma: PrismaService, 
+        private prisma: PrismaService,
         @Inject(forwardRef(() => EventService))
         private eventService: EventService,
-        
+
         @Inject(forwardRef(() => CallService))
         private callService: CallService,) {
         const apiKey = process.env.GEMINI_API_KEY;
@@ -27,7 +28,8 @@ export class AIService {
 
     // Summarize a call transcript
     async summarizeCall(callId: string): Promise<string> {
-        const call = await this.prisma.call.findUnique({ where: { id: callId } });
+        const numericCallId = parseInt(callId, 10);
+        const call = await this.prisma.call.findUnique({ where: { id: numericCallId } });
         if (!call?.transcript) return 'No transcript available.';
 
         try {
@@ -41,7 +43,7 @@ ${call.transcript}`;
             const result = await model.generateContent(prompt);
             const response = result.response;
             const summary = response.text();
-            await this.prisma.call.update({ where: { id: callId }, data: { aiSummary: summary } });
+            await this.prisma.call.update({ where: { id: numericCallId }, data: { aiSummary: summary } });
             return summary;
         } catch (error) {
             this.logger.error(`Failed to summarize call ${callId}:`, error);
@@ -87,25 +89,29 @@ User message: "${options.message}"`;
                 throw new NotFoundException(`User with ID ${dto.userId} not found`);
             }
 
-            if (!parsedRequest.attendeeEmails || parsedRequest.attendeeEmails.length === 0) {
-                throw new BadRequestException("No attendees found in the request.");
+            let host = requester; // Default host to the requester
+
+            if (parsedRequest.attendeeEmails && parsedRequest.attendeeEmails.length > 0) {
+                const hostEmail = parsedRequest.attendeeEmails.find(email => email !== requester.email);
+                if (hostEmail) {
+                    const foundHost = await this.prisma.user.findUnique({ where: { email: hostEmail } });
+                    if (!foundHost) {
+                        throw new NotFoundException(`Host with email ${hostEmail} not found`);
+                    }
+                    host = foundHost;
+                }
             }
 
-            const hostEmail = parsedRequest.attendeeEmails.find(email => email !== requester.email);
-            if (!hostEmail) {
-                throw new BadRequestException("Could not determine a host for the event.");
-            }
-
-            const host = await this.prisma.user.findUnique({ where: { email: hostEmail } });
-            if (!host) {
-                throw new NotFoundException(`Host with email ${hostEmail} not found`);
-            }
+            const start = new Date(parsedRequest.startTime);
+            const end = new Date(parsedRequest.endTime);
 
             const createEventDto = {
                 hostId: host.id,
                 title: parsedRequest.title,
-                startDate: new Date(parsedRequest.startTime),
-                endDate: new Date(parsedRequest.endTime),
+                startDate: start.toISOString().split('T')[0],
+                startTime: start.toISOString().split('T')[1].substring(0, 5),
+                endDate: end.toISOString().split('T')[0],
+                endTime: end.toISOString().split('T')[1].substring(0, 5),
             };
 
             const requesterOffices = await this.prisma.officeMember.findMany({ where: { userId: requester.id }, select: { officeId: true } });
@@ -136,12 +142,16 @@ User message: "${options.message}"`;
 
                 // Immediate call
                 const call = await this.callService.createCall(officeId, { title: parsedRequest.title });
+                if (!call.data) {
+                    throw new InternalServerErrorException("Failed to create call.");
+                }
+
                 // For now, we just return the call object. In a real-world scenario,
                 // you'd handle participant notifications here.
                 return {
                     message: "Immediate call created. You can join now.",
-                    call,
-                    meetingUrl: `https://meet.jit.si/office-space-${call.id}`
+                    call: call.data, // 'call' here refers to the payload, not the whole response
+                    meetingUrl: `https://meet.jit.si/office-space-${call.data.id}`,
                 };
             } else {
                 // Scheduled call (create an event)
@@ -160,12 +170,16 @@ User message: "${options.message}"`;
                     throw new BadRequestException("Requester and host are not in the same office.");
                 }
 
+                const start = new Date(parsedRequest.startTime);
+                const end = new Date(parsedRequest.endTime);
 
                 return this.eventService.createEvent(requester, commonOffice.officeId, {
                     hostId: host.id,
                     title: parsedRequest.title,
-                    startDate: new Date(parsedRequest.startTime),
-                    endDate: new Date(parsedRequest.endTime),
+                    startDate: start.toISOString().split('T')[0],
+                    startTime: start.toISOString().split('T')[1].substring(0, 5),
+                    endDate: end.toISOString().split('T')[0],
+                    endTime: end.toISOString().split('T')[1].substring(0, 5),
                 });
             }
         }

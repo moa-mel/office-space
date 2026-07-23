@@ -13,18 +13,14 @@ export class EventService {
     constructor(
         private prisma: PrismaService,
         private mailService: MailService,
-        
+
         @Inject(forwardRef(() => AIService)) 
         private readonly aiService: AIService,
     ) { }
 
     async createEvent(user: User, officeId: number, dto: CreateEventDto) {
-        if (user.id === dto.hostId) {
-            throw new BadRequestException('You cannot book a call with yourself');
-        }
-
-        const requestedStartDate = new Date(dto.startDate);
-        const requestedEndDate = new Date(dto.endDate);
+        const requestedStartDate = new Date(`${dto.startDate}T${dto.startTime}:00`);
+        const requestedEndDate = new Date(`${dto.endDate}T${dto.endTime}:00`);
 
         const now = new Date();
         if (requestedStartDate < now) {
@@ -64,6 +60,11 @@ export class EventService {
 
         const meetingUrl = `https://meet.jit.si/office-space-${generateId({ type: 'identifier' })}`;
 
+        const attendeesToCreate = [{ userId: user.id }];
+        if (user.id !== dto.hostId) {
+            attendeesToCreate.push({ userId: dto.hostId });
+        }
+
         // Create the Event record
         const Event = await this.prisma.event.create({
             data: {
@@ -77,10 +78,7 @@ export class EventService {
                 timezone: dto.timezone,
                 meetingUrl: meetingUrl,
                 attendees: {
-                    create: [
-                        { userId: user.id },
-                        { userId: dto.hostId }
-                    ]
+                    create: attendeesToCreate
                 }
             },
             include: {
@@ -156,10 +154,21 @@ export class EventService {
             throw new ForbiddenException('You are not authorized to update this Event');
         }
 
-        const requestedStartDate = dto.startDate ? new Date(dto.startDate) : Event.startDate;
-        const requestedEndDate = dto.endDate ? new Date(dto.endDate) : Event.endDate;
+        let requestedStartDate = Event.startDate;
+        let requestedEndDate = Event.endDate;
 
-        if (dto.startDate || dto.endDate) {
+        const hasDateOrTimeChanged = dto.startDate || dto.startTime || dto.endDate || dto.endTime;
+
+        if (hasDateOrTimeChanged) {
+            const newStartDateStr = dto.startDate || Event.startDate.toISOString().split('T')[0];
+            const newStartTimeStr = dto.startTime || Event.startDate.toISOString().split('T')[1].substring(0, 5);
+            const newEndDateStr = dto.endDate || Event.endDate.toISOString().split('T')[0];
+            const newEndTimeStr = dto.endTime || Event.endDate.toISOString().split('T')[1].substring(0, 5);
+
+            requestedStartDate = new Date(`${newStartDateStr}T${newStartTimeStr}:00`);
+            requestedEndDate = new Date(`${newEndDateStr}T${newEndTimeStr}:00`);
+
+
             const now = new Date();
             if (requestedStartDate < now) {
                 throw new BadRequestException('Cannot schedule a Event in the past');

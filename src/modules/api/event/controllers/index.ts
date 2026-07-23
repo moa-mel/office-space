@@ -1,7 +1,7 @@
-import { Body, Controller, Get, Param, ParseIntPipe, Patch, Query, UseGuards } from "@nestjs/common"
+import { Body, Controller, Get, Param, ParseIntPipe, Patch, Post, Query, UseGuards } from "@nestjs/common"
 import { EventService } from "../services"
 import { AuthGuard } from "../../auth/guards"
-import { GetHostAvailabilityDto, UpdateEventDto } from "../dtos"
+import { CreateEventDto, GetHostAvailabilityDto, UpdateEventDto } from "../dtos"
 import { User } from "@prisma/client";
 import { GetUser } from "../../user/decorators"
 
@@ -13,6 +13,15 @@ export class EventController {
     constructor(
         private readonly eventService: EventService
     ) { }
+
+    @Post(':id')
+    async createEvent(
+        @GetUser() user: User,
+        @Param('id', ParseIntPipe) id: number,
+        @Body() dto: CreateEventDto
+    ){
+        return this.eventService.createEvent(user, id, dto);
+    }
 
     @Get('availability')
     async getHostAvailability(
