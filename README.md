@@ -29,9 +29,8 @@ This application provides a rich set of features to enhance remote work collabor
 *   **Real-time:** [Socket.IO](https://socket.io/) or similar WebSocket library for chat and call signaling.
 *   **AI:** [Google Generative AI](https://ai.google.dev/) for transcription, summarization, and embeddings.
 
-*(You can add your frontend technologies here, e.g., React, Next.js, etc.)*
 
-## ⚙️ Getting Started
+## Getting Started
 
 Follow these instructions to get a copy of the project up and running on your local machine for development and testing purposes.
 
