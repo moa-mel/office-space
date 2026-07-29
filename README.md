@@ -2,7 +2,7 @@
 
 A collaborative virtual office platform designed to bring remote teams together with seamless communication and AI-powered productivity tools. This project provides real-time chat, video calls, event scheduling, and intelligent insights from your meetings.
 
-## ✨ Features
+## Features
 
 This application provides a rich set of features to enhance remote work collaboration:
 
@@ -21,7 +21,7 @@ This application provides a rich set of features to enhance remote work collabor
     *   AI-generated summaries of meetings, highlighting key points and action items.
     *   Semantic search across all past call transcripts to find information instantly.
 
-## 🚀 Tech Stack
+## Tech Stack
 
 *   **Backend:** [NestJS](https://nestjs.com/) - A progressive Node.js framework for building efficient and scalable server-side applications.
 *   **Database ORM:** [Prisma](https://www.prisma.io/) - A next-generation ORM for Node.js and TypeScript.
