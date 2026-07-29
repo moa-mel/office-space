@@ -1,77 +1,83 @@
+# Office-Space
 
+A collaborative virtual office platform designed to bring remote teams together with seamless communication and AI-powered productivity tools. This project provides real-time chat, video calls, event scheduling, and intelligent insights from your meetings.
 
-## Description
+## ✨ Features
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+This application provides a rich set of features to enhance remote work collaboration:
 
-## Project setup
+*   **Authentication:** Secure user sign-up, sign-in with email/password or Google OAuth, and email verification.
+*   **Office Management:**
+    *   Create and customize virtual offices.
+    *   Invite members and manage roles (Admin, Member).
+*   **Real-time Communication:**
+    *   Direct and group chat with text and file sharing.
+    *   Real-time video and audio calls.
+*   **Collaboration & Scheduling:**
+    *   A shared calendar for scheduling team events.
+    *   Event notifications and attendance status (Accepted, Declined, Pending).
+*   **AI-Powered Insights:**
+    *   Automatic transcription of video/audio calls.
+    *   AI-generated summaries of meetings, highlighting key points and action items.
+    *   Semantic search across all past call transcripts to find information instantly.
 
-```bash
-$ npm install
+## 🚀 Tech Stack
+
+*   **Backend:** [NestJS](https://nestjs.com/) - A progressive Node.js framework for building efficient and scalable server-side applications.
+*   **Database ORM:** [Prisma](https://www.prisma.io/) - A next-generation ORM for Node.js and TypeScript.
+*   **Database:** [PostgreSQL](https://www.postgresql.org/) (or your preferred SQL database).
+*   **Real-time:** [Socket.IO](https://socket.io/) or similar WebSocket library for chat and call signaling.
+*   **AI:** [Google Generative AI](https://ai.google.dev/) for transcription, summarization, and embeddings.
+
+*(You can add your frontend technologies here, e.g., React, Next.js, etc.)*
+
+## ⚙️ Getting Started
+
+Follow these instructions to get a copy of the project up and running on your local machine for development and testing purposes.
+
+### Prerequisites
+
+*   Node.js (v18 or later)
+*   npm or yarn
+*   A running PostgreSQL database instance
+
+### Installation
+
+1.  **Clone the repository:**
+    ```sh
+    git clone <your-repository-url>
+    cd office-space
+    ```
+
+2.  **Install dependencies:**
+    ```sh
+    npm install
+    ```
+
+3.  **Set up environment variables:**
+    Create a `.env` file in the root of the project and add the necessary environment variables. See the `.env.example` file for a template.
+    ```env
+    # PostgreSQL Database URL
+    DATABASE_URL="postgresql://USER:PASSWORD@HOST:PORT/DATABASE?schema=public"
+
+    # Google Generative AI API Key
+    GEMINI_API_KEY="your-google-ai-api-key"
+
+    # Add other variables for JWT secrets, Google OAuth, etc.
+    ```
+
+4.  **Run database migrations:**
+    Apply the database schema using Prisma Migrate.
+    ```sh
+    npx prisma migrate dev
+    ```
+
+### Running the Application
+
+To start the development server, run:
+
+```sh
+npm run start:dev
 ```
 
-## Compile and run the project
-
-```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
-```
-
-## Run tests
-
-```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
-```
-
-## Deployment
-
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
-
-```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
-```
-
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
-
-## Resources
-
-Check out a few resources that may come in handy when working with NestJS:
-
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
-
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+The application will be running on `http://localhost:3000` (or the port you have configured).
