@@ -79,4 +79,4 @@ To start the development server, run:
 npm run start:dev
 ```
 
-The application will be running on `http://localhost:3000` (or the port you have configured).
+The application will be running on `http://localhost:5050` (or the port you have configured).

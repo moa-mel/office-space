@@ -11,6 +11,7 @@ import helmet from "helmet";
 import morgan from "morgan";
 import { IoAdapter } from "@nestjs/platform-socket.io";
 import { Request, Response } from "express";
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 
 export interface CreateServerOptions {
@@ -58,7 +59,18 @@ export default async (
 
   app.useWebSocketAdapter(new IoAdapter(app));
 
-  await app.listen(options.port); 
+  const config = new DocumentBuilder()
+    .setTitle('Office Space API')
+    .setDescription('Office Space API documentation')
+    .setVersion('1.0')
+    .addBearerAuth()
+    .build();
+
+  const document = SwaggerModule.createDocument(app, config);
+
+  SwaggerModule.setup('docs', app, document);
+
+  await app.listen(options.port);
 
   const prismaService = app.get(PrismaService);
   await prismaService.enableShutdownHooks(app);
