@@ -1,133 +1,111 @@
-
-import {
-    Injectable,
-    Logger,
-    InternalServerErrorException,
-} from "@nestjs/common";
+import { Injectable, Logger } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
-import * as fs from "fs";
-import * as path from "path";
-import { Resend } from "resend";
+import * as nodemailer from 'nodemailer';
+import * as fs from 'fs';
+import * as path from 'path';
 
 @Injectable()
 export class MailService {
-    private readonly resend: Resend;
+    private transporter: nodemailer.Transporter
     private readonly logger = new Logger(MailService.name);
-    private readonly fromEmail: string;
 
-    constructor(private readonly configService: ConfigService) {
-        this.resend = new Resend(
-            this.configService.getOrThrow<string>("RESEND_API_KEY"),
-        );
-
-        this.fromEmail =
-            this.configService.getOrThrow<string>("EMAIL_FROM");
+    constructor(private configService: ConfigService) {
+        const port = Number(this.configService.get('EMAIL_PORT'));
+        this.transporter = nodemailer.createTransport({
+            host: this.configService.get('EMAIL_HOST'),
+            port: port,
+            secure: port === 465,
+            auth: {
+                user: this.configService.get('EMAIL_USER'),
+                pass: this.configService.get('EMAIL_PASS'),
+            },
+            tls: {
+            rejectUnauthorized: false
+        }
+        })
     }
 
-    private async sendMail(
-        to: string,
-        subject: string,
-        html: string,
-    ): Promise<void> {
-        const { data, error } = await this.resend.emails.send({
-            from: this.fromEmail,
+    async sendMail(to: string, subject: string, html: string) {
+        const mailOptions = {
+            from: this.configService.get('EMAIL_USER'),
             to,
             subject,
             html,
-        });
-
-        if (error) {
-            this.logger.error(
-                `Failed to send email to ${to}: ${error.message}`,
-            );
-            throw new InternalServerErrorException(
-                "Failed to send email",
-            );
         }
 
-        this.logger.log(
-            `Email request accepted for ${to}. ID: ${data?.id ?? "unknown"}`,
-        );
+        await this.transporter.sendMail(mailOptions)
+
     }
 
-    private loadTemplate(templateName: string): string {
-        const filePath = path.join(
-            __dirname,
-            "templates",
-            templateName,
-        );
-
-        return fs.readFileSync(filePath, "utf8");
-    }
-
-    async sendEmailOTP(
-        name: string,
-        email: string,
-        otp: string,
-    ): Promise<void> {
+    async sendEmailOTP(name: string, email: string, otp: string) {
         try {
-            const html = this.loadTemplate("verify-email.html")
+            const filePath = path.join(__dirname, 'templates', 'verify-email.html');
+
+            let html = fs.readFileSync(filePath, 'utf8');
+
+            html = html
                 .replace(/{{name}}/g, name)
                 .replace(/{{otp}}/g, otp)
                 .replace(/{{year}}/g, String(new Date().getFullYear()));
 
-            await this.sendMail(email, "Verify Your Email", html);
+            await this.sendMail(email, 'Verify Your Email', html);
         } catch (error) {
-            this.logger.error(`Email verification failed for ${email}`, error);
+            this.logger.error(`Failed to send email to ${email}`, error);
             throw error;
         }
     }
 
-    async sendPasswordResetOTP(
-        name: string,
-        email: string,
-        otp: string,
-    ): Promise<void> {
+
+    async sendPasswordResetOTP(name: string, email: string, otp: string) {
         try {
-            const html = this.loadTemplate("password-reset.html")
+            const filePath = path.join(__dirname, 'templates', 'password-reset.html');
+
+            let html = fs.readFileSync(filePath, 'utf8');
+
+            html = html
                 .replace(/{{name}}/g, name)
                 .replace(/{{otp}}/g, otp)
                 .replace(/{{year}}/g, String(new Date().getFullYear()));
 
-            await this.sendMail(email, "Password Reset OTP", html);
+            await this.sendMail(email, 'Password Reset OTP', html);
         } catch (error) {
-            this.logger.error(`Password reset email failed for ${email}`, error);
+            this.logger.error(`Failed to send email to ${email}`, error);
             throw error;
         }
     }
 
-    async sendAddUserEmail(
-        name: string,
-        email: string,
-        office_name: string,
-    ): Promise<void> {
+    async sendAddUserEmail(name: string, email: string, office_name: string) {
         try {
-            const html = this.loadTemplate("add-user.html")
+            const filePath = path.join(__dirname, 'templates', 'add-user.html');
+
+            let html = fs.readFileSync(filePath, 'utf8');
+
+            html = html
                 .replace(/{{name}}/g, name)
                 .replace(/{{office_name}}/g, office_name)
                 .replace(/{{year}}/g, String(new Date().getFullYear()));
 
-            await this.sendMail(email, "User Added to Office", html);
+            await this.sendMail(email, 'User Added to Office', html);
         } catch (error) {
-            this.logger.error(`Add-user email failed for ${email}`, error);
+            this.logger.error(`Failed to send email to ${email}`, error);
             throw error;
         }
     }
 
-    async sendRemoveUserEmail(
-        name: string,
-        email: string,
-        office_name: string,
-    ): Promise<void> {
+    async sendRemoveUserEmail(name: string, email: string, office_name: string) {
         try {
-            const html = this.loadTemplate("remove-user.html")
+            const filePath = path.join(__dirname, 'templates', 'remove-user.html');
+
+            let html = fs.readFileSync(filePath, 'utf8');
+
+            html = html
                 .replace(/{{name}}/g, name)
                 .replace(/{{office_name}}/g, office_name)
                 .replace(/{{year}}/g, String(new Date().getFullYear()));
 
-            await this.sendMail(email, "User Removed from the Office", html);
+            await this.sendMail(email, 'User Removed from the Office', html);
         } catch (error) {
-            this.logger.error(`Remove-user email failed for ${email}`, error);
+            this.logger.error(`Failed to send email to ${email}`, error);
             throw error;
         }
     }
@@ -140,22 +118,26 @@ export class MailService {
         endDate: string,
         timezone: string,
         meetingUrl: string,
-        notes: string,
-    ): Promise<void> {
+        notes: string
+    ) {
         try {
-            const html = this.loadTemplate("create-Event.html")
+            const filePath = path.join(__dirname, 'templates', 'create-Event.html');
+
+            let html = fs.readFileSync(filePath, 'utf8');
+
+            html = html
                 .replace(/{{name}}/g, name)
                 .replace(/{{title}}/g, title)
                 .replace(/{{startDate}}/g, startDate)
                 .replace(/{{endDate}}/g, endDate)
                 .replace(/{{timezone}}/g, timezone)
                 .replace(/{{meetingUrl}}/g, meetingUrl)
-                .replace(/{{notes}}/g, notes || "N/A")
+                .replace(/{{notes}}/g, notes || 'N/A')
                 .replace(/{{year}}/g, String(new Date().getFullYear()));
 
-            await this.sendMail(email, "New Event Scheduled", html);
+            await this.sendMail(email, 'New Event Scheduled', html);
         } catch (error) {
-            this.logger.error(`Create-event email failed for ${email}`, error);
+            this.logger.error(`Failed to send email to ${email}`, error);
             throw error;
         }
     }
@@ -166,20 +148,24 @@ export class MailService {
         title: string,
         startDate: string,
         endDate: string,
-        notes: string,
-    ): Promise<void> {
+        notes: string
+    ) {
         try {
-            const html = this.loadTemplate("create-Event.html")
+            const filePath = path.join(__dirname, 'templates', 'create-Event.html');
+
+            let html = fs.readFileSync(filePath, 'utf8');
+
+            html = html
                 .replace(/{{name}}/g, name)
                 .replace(/{{title}}/g, title)
                 .replace(/{{startDate}}/g, startDate)
                 .replace(/{{endDate}}/g, endDate)
-                .replace(/{{notes}}/g, notes || "N/A")
+                .replace(/{{notes}}/g, notes || 'N/A')
                 .replace(/{{year}}/g, String(new Date().getFullYear()));
 
-            await this.sendMail(email, "Event Updated", html);
+            await this.sendMail(email, 'New Event Scheduled', html);
         } catch (error) {
-            this.logger.error(`Update-event email failed for ${email}`, error);
+            this.logger.error(`Failed to send email to ${email}`, error);
             throw error;
         }
     }
