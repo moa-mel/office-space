@@ -1,40 +1,60 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
-import * as nodemailer from 'nodemailer';
-import * as fs from 'fs';
-import * as path from 'path';
+import { BrevoClient } from "@getbrevo/brevo";
+import * as fs from "fs";
+import * as path from "path";
 
 @Injectable()
 export class MailService {
-    private transporter: nodemailer.Transporter
     private readonly logger = new Logger(MailService.name);
+    private readonly brevo: BrevoClient;
+    private readonly senderEmail: string;
+    private readonly senderName: string;
 
     constructor(private configService: ConfigService) {
-        const port = Number(this.configService.get('EMAIL_PORT'));
-        this.transporter = nodemailer.createTransport({
-            host: this.configService.get('EMAIL_HOST'),
-            port: port,
-            secure: port === 465,
-            auth: {
-                user: this.configService.get('EMAIL_USER'),
-                pass: this.configService.get('EMAIL_PASS'),
-            },
-            tls: {
-            rejectUnauthorized: false
+        const apiKey = this.configService.get<string>("BREVO_API_KEY");
+        const senderEmail = this.configService.get<string>("EMAIL_FROM");
+
+        if (!apiKey) {
+            throw new Error("BREVO_API_KEY is not configured");
         }
-        })
+
+        if (!senderEmail) {
+            throw new Error("EMAIL_FROM is not configured");
+        }
+
+        this.brevo = new BrevoClient({ apiKey });
+        this.senderEmail = senderEmail;
+        this.senderName =
+            this.configService.get<string>("EMAIL_FROM_NAME") || "Office Space";
     }
 
-    async sendMail(to: string, subject: string, html: string) {
-        const mailOptions = {
-            from: this.configService.get('EMAIL_USER'),
-            to,
-            subject,
-            html,
+    async sendMail(
+        to: string,
+        subject: string,
+        html: string,
+    ): Promise<void> {
+        try {
+            const result = await this.brevo.transactionalEmails.sendTransacEmail({
+                sender: {
+                    email: this.senderEmail,
+                    name: this.senderName,
+                },
+                to: [{ email: to }],
+                subject,
+                htmlContent: html,
+            });
+
+            this.logger.log(
+                `Email accepted by Brevo for ${to}. Message ID: ${result.messageId}`,
+            );
+        } catch (error: unknown) {
+            const message =
+                error instanceof Error ? error.message : String(error);
+
+            this.logger.error(`Failed to send email to ${to}: ${message}`);
+            throw error;
         }
-
-        await this.transporter.sendMail(mailOptions)
-
     }
 
     async sendEmailOTP(name: string, email: string, otp: string) {
